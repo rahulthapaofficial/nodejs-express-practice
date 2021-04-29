@@ -4,18 +4,7 @@ const app = express();
 
 app.use(express.json());
 
-let customers = [
-  {
-    id: 1,
-    name: "Rahul Thapa",
-    mobile_no: 9816491822,
-  },
-  {
-    id: 2,
-    name: "Apaht Luhar",
-    mobile_no: 9843986469,
-  },
-];
+let customers = [];
 
 app.get("/", (req, res) => {
   res.send(`Hello World`);
@@ -26,15 +15,13 @@ app.get("/api/customers", (req, res) => {
 });
 
 app.post("/api/customers", (req, res) => {
-  const schema = Joi.object({
-    name: Joi.string().min(3).required(),
-  });
-  const result = schema.validate(req.body);
-  if (result.error) {
+  const { error } = validateCustomer(req.body);
+  if (error) {
     return res
       .status(400)
-      .send({ success: false, message: result.error.details[0].message });
+      .send({ success: false, message: error.details[0].message });
   }
+
   const customer = {
     id: customers.length + 1,
     name: req.body.name,
@@ -48,22 +35,34 @@ app.get("/api/customers/:id", (req, res) => {
     (customer) => customer.id === parseInt(req.params.id)
   );
   if (!customer)
-    res.status(404).send("The customer with given ID was not found");
+    return res.status(404).send("The customer with given ID was not found");
   res.send(customer);
 });
 
 app.put("/api/customers/:id", (req, res) => {
-  if (result.error) {
+  const customer = customers.find((c) => c.id === parseInt(req.params.id));
+  if (!customer)
+    return res.status(404).send("The Customer with the given ID was not found");
+
+  const { error } = validateCustomer(req.body);
+  if (error) {
     return res
       .status(400)
-      .send({ success: false, message: result.error.details[0].message });
+      .send({ success: false, message: error.details[0].message });
   }
 
-  const customer = customers.find(
-    (customer) => customer.id === parseInt(req.params.id)
-  );
-
   customer.name = req.body.name;
+  res.send(customer);
+});
+
+app.delete("/api/customers/:id", (req, res) => {
+  const customer = customers.find((c) => c.id === parseInt(req.params.id));
+  if (!customer)
+    return res.status(404).send("The customer with given ID was not found");
+
+  const index = customers.indexOf(customer);
+  customers.splice(index, 1);
+
   res.send(customer);
 });
 
@@ -76,5 +75,5 @@ function validateCustomer(customer) {
   const schema = Joi.object({
     name: Joi.string().min(3).required(),
   });
-  const result = schema.validate(customer);
+  return schema.validate(customer);
 }

@@ -1,8 +1,18 @@
 const Joi = require("joi");
 const express = require("express");
-const app = express();
+const productRoutes = require("./routes/products");
+const orderRoutes = require("./routes/orders");
 
+const app = express();
 app.use(express.json());
+
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  console.log(`Listening on port ${port}...`);
+});
+
+app.use("/api/products", productRoutes);
+app.use("/api/orders", orderRoutes);
 
 let customers = [];
 
@@ -64,11 +74,6 @@ app.delete("/api/customers/:id", (req, res) => {
   customers.splice(index, 1);
 
   res.send(customer);
-});
-
-const port = process.env.PORT || 3000;
-app.listen(port, () => {
-  console.log(`Listening on port ${port}...`);
 });
 
 function validateCustomer(customer) {
